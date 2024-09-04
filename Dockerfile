@@ -1,12 +1,13 @@
-FROM alpine:3.7 as seed-build
+FROM debian:stretch-slim as seed-build
 
-RUN apk update
-RUN apk --no-cache add autoconf 
-RUN apk --no-cache add automake 
-RUN apk --no-cache add boost-dev 
-RUN apk --no-cache add build-base 
-RUN apk --no-cache add openssl 
-RUN apk --no-cache add openssl-dev 
+RUN apt-get update && apt-get install -y \
+    autoconf \
+    automake \
+    libboost-all-dev \
+    build-essential \
+    openssl \
+    libssl-dev
+
 ADD . /src
 
 WORKDIR /src
@@ -16,19 +17,17 @@ RUN sed -i -e 's/^inline//g' strlcpy.h
 
 RUN make
 
-FROM alpine:3.7
+FROM debian:stretch-slim
 
 COPY --from=seed-build /src/dnsseed /usr/local/bin/dnsseed
 
-RUN apk --no-cache add \
-    libcrypto1.0 \
-    libstdc++
+RUN apt-get update && apt-get install -y \
+    libssl1.1 \
+    libstdc++6
 
 ENV APP_DIRECTORY=/data
 
 WORKDIR ${APP_DIRECTORY}
-
-VOLUME /var/lib/volume
 
 EXPOSE 53
 
